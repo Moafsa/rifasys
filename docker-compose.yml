@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: rifassys_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - rifassys_network
+
+  # Laravel Application
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: rifassys_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    environment:
+      - PHP_IDE_CONFIG=serverName=rifassys
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rifassys_network
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: rifassys_nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8082}:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - rifassys_network
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:alpine
+    container_name: rifassys_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6381}:6379"
+    networks:
+      - rifassys_network
+
+  # Wuzapi WhatsApp API (commented out for now)
+  # wuzapi:
+  #   image: baileys/wuzapi:latest
+  #   container_name: rifassys_wuzapi
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${WUZAPI_PORT:-8081}:8081"
+  #   volumes:
+  #     - wuzapi_data:/app/data
+  #   environment:
+  #     - WUZAPI_PORT=8081
+  #   networks:
+  #     - rifassys_network
+
+  # Laravel Queue Worker
+  queue:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: rifassys_queue
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: php artisan queue:work --tries=3
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rifassys_network
+
+  # Laravel Scheduler (Cron)
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: rifassys_scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rifassys_network
+
+networks:
+  rifassys_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  # wuzapi_data:
