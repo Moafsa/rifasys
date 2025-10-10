@@ -35,4 +35,48 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | WuzAPI (WhatsApp API)
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for WuzAPI WhatsApp integration
+    | WuzAPI runs as a Docker container service
+    |
+    */
+
+    'wuzapi' => [
+        'url' => env('WUZAPI_URL', 'http://wuzapi:8081'),
+        'webhook_url' => env('APP_URL') . '/api/webhooks/whatsapp',
+        'webhook_secret' => env('WUZAPI_WEBHOOK_SECRET'),
+        'api_token' => env('WUZAPI_API_TOKEN'),
+        'instance_id' => env('WUZAPI_INSTANCE_ID'),
+        
+        // Message templates
+        'templates' => [
+            'verification_code' => [
+                'enabled' => true,
+                'expiration_minutes' => 3,
+                'template_name' => env('WUZAPI_VERIFICATION_TEMPLATE', 'verification_code'),
+            ],
+            'verification_confirmation' => [
+                'enabled' => true,
+                'expiration_minutes' => 5,
+                'template_name' => env('WUZAPI_CONFIRMATION_TEMPLATE', 'verification_confirmation'),
+            ],
+            'purchase_confirmation' => [
+                'enabled' => true,
+                'delay_seconds' => 5,
+                'template_name' => env('WUZAPI_PURCHASE_TEMPLATE', 'purchase_confirmation'),
+            ],
+        ],
+        
+        // Connection settings
+        'connection' => [
+            'timeout' => env('WUZAPI_TIMEOUT', 30),
+            'retry_attempts' => env('WUZAPI_RETRY_ATTEMPTS', 3),
+            'retry_delay' => env('WUZAPI_RETRY_DELAY', 1),
+        ],
+    ],
+
 ];

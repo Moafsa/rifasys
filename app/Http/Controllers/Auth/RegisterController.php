@@ -145,7 +145,7 @@ class RegisterController extends Controller
             // Fazer login para poder acessar a página de verificação
             Auth::login($user);
 
-            return redirect()->route('verification.notice')->with('success', 'Cadastro realizado com sucesso! Verifique seu email para continuar.');
+            return redirect()->route('verification.method')->with('success', 'Cadastro realizado com sucesso! Escolha como deseja verificar sua conta.');
             
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Re-throw validation exceptions to be handled by Laravel

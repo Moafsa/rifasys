@@ -15,9 +15,14 @@ class EnsureEmailIsVerified
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->hasVerifiedEmail()) {
-            return redirect()->route('verification.notice')
-                ->with('error', 'Você precisa verificar seu email antes de continuar.');
+        if (!$request->user()) {
+            return redirect()->route('login')
+                ->with('error', 'Você precisa fazer login primeiro.');
+        }
+
+        if (!$request->user()->hasVerifiedEmail()) {
+            return redirect()->route('verification.method')
+                ->with('error', 'Você precisa verificar sua conta antes de continuar.');
         }
 
         return $next($request);

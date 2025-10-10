@@ -88,12 +88,19 @@ class LoginController extends Controller
             // Fazer login primeiro para poder acessar a página de verificação
             Auth::login($user);
             
-            return redirect()->route('verification.notice')
-                ->with('error', 'Você precisa verificar seu email antes de continuar. Um novo link foi enviado para seu Gmail.');
+            return redirect()->route('verification.method')
+                ->with('error', 'Você precisa verificar sua conta antes de continuar. Escolha como deseja receber o código de verificação.');
         }
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+            
+            // FORÇAR verificação após login
+            if (!$user->hasVerifiedEmail()) {
+                return redirect()->route('verification.method')
+                    ->with('error', 'Você precisa verificar sua conta antes de continuar. Escolha como deseja receber o código de verificação.');
+            }
+            
             return redirect()->route('home')->with('success', 'Login realizado com sucesso! Bem-vindo de volta!');
         }
 

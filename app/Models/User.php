@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone',
         'document',
         'password',
+        'verification_method',
     ];
 
     /**
@@ -78,6 +79,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the WhatsApp verifications for the user.
+     */
+    public function whatsappVerifications(): HasMany
+    {
+        return $this->hasMany(WhatsAppVerification::class);
+    }
+
+    /**
      * Check if the user's email is verified.
      */
     public function hasVerifiedEmail(): bool
@@ -93,5 +102,29 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->forceFill([
             'email_verified_at' => $this->freshTimestamp(),
         ])->save();
+    }
+
+    /**
+     * Check if user has phone number configured.
+     */
+    public function hasPhone(): bool
+    {
+        return !is_null($this->phone) && !empty($this->phone);
+    }
+
+    /**
+     * Get user's preferred verification method.
+     */
+    public function getVerificationMethod(): string
+    {
+        return $this->verification_method ?? 'email';
+    }
+
+    /**
+     * Check if user prefers WhatsApp verification.
+     */
+    public function prefersWhatsAppVerification(): bool
+    {
+        return $this->getVerificationMethod() === 'whatsapp' && $this->hasPhone();
     }
 }

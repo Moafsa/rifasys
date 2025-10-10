@@ -61,19 +61,18 @@ services:
     networks:
       - rifassys_network
 
-  # Wuzapi WhatsApp API (commented out for now)
-  # wuzapi:
-  #   image: baileys/wuzapi:latest
-  #   container_name: rifassys_wuzapi
-  #   restart: unless-stopped
-  #   ports:
-  #     - "${WUZAPI_PORT:-8081}:8081"
-  #   volumes:
-  #     - wuzapi_data:/app/data
-  #   environment:
-  #     - WUZAPI_PORT=8081
-  #   networks:
-  #     - rifassys_network
+  # Wuzapi WhatsApp API (Mock for development - using simple nginx)
+  wuzapi:
+    image: nginx:alpine
+    container_name: rifassys_wuzapi
+    restart: unless-stopped
+    ports:
+      - "${WUZAPI_PORT:-8082}:80"
+    volumes:
+      - ./docker/wuzapi:/usr/share/nginx/html
+      - ./docker/wuzapi/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - rifassys_network
 
   # Laravel Queue Worker
   queue:
@@ -115,4 +114,4 @@ networks:
 
 volumes:
   postgres_data:
-  # wuzapi_data:
+  wuzapi_data:

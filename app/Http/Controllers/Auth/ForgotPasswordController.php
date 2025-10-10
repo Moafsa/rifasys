@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\PasswordReset;
 use App\Models\User;
+use App\Services\WuzapiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\Validator;
 
 class ForgotPasswordController extends Controller
 {
+    protected WuzapiService $wuzapiService;
+
+    public function __construct(WuzapiService $wuzapiService)
+    {
+        $this->wuzapiService = $wuzapiService;
+    }
     /**
      * Show the form for requesting a password reset link.
      */
@@ -42,8 +49,12 @@ class ForgotPasswordController extends Controller
 
         $passwordReset = PasswordReset::createForUser($user);
         
-        // Send reset email
-        $this->sendResetEmail($user, $passwordReset);
+        // Send reset link via preferred method
+        if ($user->prefersWhatsAppVerification() && $user->hasPhone()) {
+            $this->sendResetWhatsApp($user, $passwordReset);
+        } else {
+            $this->sendResetEmail($user, $passwordReset);
+        }
 
         return redirect()->route('password.check-email')->with('reset_email', $user->email);
     }
@@ -66,5 +77,27 @@ class ForgotPasswordController extends Controller
             $message->to($user->email)
                     ->subject('Redefinir Senha - RAFE');
         });
+    }
+
+    /**
+     * Send reset password link via WhatsApp.
+     */
+    private function sendResetWhatsApp(User $user, PasswordReset $passwordReset): void
+    {
+        $resetLink = route('password.confirm.show', [
+            'token' => $passwordReset->token,
+            'email' => $user->email
+        ]);
+
+        $message = "🔐 *RAFE - Redefinir Senha*\n\n";
+        $message .= "Olá {$user->name}!\n\n";
+        $message .= "Clique no link abaixo para redefinir sua senha:\n\n";
+        $message .= "🔗 *Link de Redefinição:*\n";
+        $message .= "{$resetLink}\n\n";
+        $message .= "⏰ Este link expira em 3 minutos.\n";
+        $message .= "Se você não solicitou esta redefinição, ignore esta mensagem.\n\n";
+        $message .= "✨ *RAFE - Conectando pessoas através de rifas solidárias*";
+
+        $this->wuzapiService->sendMessage($user->phone, $message);
     }
 }
