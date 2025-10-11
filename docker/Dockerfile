@@ -34,10 +34,8 @@ RUN useradd -G www-data,root -u 1000 -d /home/rifassys rifassys
 RUN mkdir -p /home/rifassys/.composer && \
     chown -R rifassys:rifassys /home/rifassys
 
-# Set user
-USER rifassys
-
 # Expose port 9000
 EXPOSE 9000
 
-CMD ["php-fpm"]
+# Start PHP-FPM
+CMD ["php-fpm", "--nodaemonize"]

@@ -8,6 +8,7 @@ COPY nginx.conf /etc/nginx/http.d/default.conf
 
 # Copy PHP files
 COPY index.php /var/www/html/
+COPY api/ /var/www/html/api/
 
 # Create log directory
 RUN mkdir -p /tmp
