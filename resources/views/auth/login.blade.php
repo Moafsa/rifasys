@@ -24,8 +24,10 @@
                     </div>
                 </div>
                 
-                <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                <form method="POST" action="{{ route('login') }}" class="space-y-6" autocomplete="off" novalidate>
                     @csrf
+                    <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="_method" value="POST">
                     
                     <!-- Gmail -->
                     <div>

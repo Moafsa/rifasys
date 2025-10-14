@@ -102,6 +102,9 @@ Route::post('/whatsapp/verify', [App\Http\Controllers\Auth\VerificationControlle
 
 // Password reset routes
 Route::get('/password/reset', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+
+// Temporary route to clear login cache
+Route::get('/clear-login', [App\Http\Controllers\TempController::class, 'clearLogin'])->name('clear.login');
 Route::post('/password/email', [App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
 Route::get('/password/check-email', function() { return view('auth.check-email'); })->name('password.check-email');
 Route::get('/password/reset-form', [App\Http\Controllers\Auth\ResetPasswordController::class, 'showResetForm'])->name('password.reset');
