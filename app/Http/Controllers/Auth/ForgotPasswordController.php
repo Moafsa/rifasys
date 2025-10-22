@@ -64,19 +64,35 @@ class ForgotPasswordController extends Controller
      */
     private function sendResetEmail(User $user, PasswordReset $passwordReset): void
     {
-        $resetLink = route('password.confirm.show', [
-            'token' => $passwordReset->token,
-            'email' => $user->email
-        ]);
+        try {
+            $resetLink = route('password.confirm.show', [
+                'token' => $passwordReset->token,
+                'email' => $user->email
+            ]);
 
-        Mail::send('emails.reset-password-link', [
-            'user' => $user,
-            'passwordReset' => $passwordReset,
-            'resetLink' => $resetLink
-        ], function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Redefinir Senha - RAFE');
-        });
+            Mail::send('emails.reset-password-link', [
+                'user' => $user,
+                'passwordReset' => $passwordReset,
+                'resetLink' => $resetLink
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Redefinir Senha - RAFE');
+            });
+
+            \Log::info('Password reset email sent successfully', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to send password reset email', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Não relançar a exceção para não quebrar o fluxo
+        }
     }
 
     /**

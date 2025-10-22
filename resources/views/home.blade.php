@@ -71,6 +71,19 @@
                         💎 Ver Marketplace
                     </a>
                 </div>
+                
+                <!-- WhatsApp Integration Links -->
+                <div class="mt-6 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <a href="{{ route('whatsapp.config') }}" class="bg-green-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                        ⚙️ Configurar WhatsApp
+                    </a>
+                    <a href="{{ route('whatsapp.examples') }}" class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
+                        📱 WhatsApp Examples
+                    </a>
+                    <a href="{{ route('whatsapp.test') }}" class="bg-purple-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-600 transition-colors flex items-center justify-center gap-2">
+                        🧪 WhatsApp Tests
+                    </a>
+                </div>
             </div>
             
             <!-- Illustration -->

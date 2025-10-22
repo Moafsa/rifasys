@@ -136,17 +136,33 @@ class LoginController extends Controller
      */
     private function sendVerificationEmail($user, EmailVerification $verification): void
     {
-        $verificationLink = route('verification.confirm.show', [
-            'token' => $verification->token,
-            'email' => $user->email
-        ]);
+        try {
+            $verificationLink = route('verification.confirm.show', [
+                'token' => $verification->token,
+                'email' => $user->email
+            ]);
 
-        Mail::send('emails.verify-email-link', [
-            'user' => $user,
-            'verificationLink' => $verificationLink
-        ], function ($message) use ($user) {
-            $message->to($user->email)
-                    ->subject('Verificar Email - RAFE');
-        });
+            Mail::send('emails.verify-email-link', [
+                'user' => $user,
+                'verificationLink' => $verificationLink
+            ], function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('Verificar Email - RAFE');
+            });
+
+            \Log::info('Email verification sent from LoginController', [
+                'user_id' => $user->id,
+                'email' => $user->email
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to send email verification from LoginController', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $e->getMessage()
+            ]);
+            
+            // Não relançar a exceção para não quebrar o fluxo
+        }
     }
 }

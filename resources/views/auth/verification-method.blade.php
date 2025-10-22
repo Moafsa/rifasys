@@ -21,6 +21,7 @@
             @csrf
             
             <div class="space-y-4">
+                @unless(config('mail_temp.force_whatsapp_only', false))
                 <!-- Email Option -->
                 <div class="relative">
                     <input id="email-method" type="radio" name="method" value="email" class="sr-only" 
@@ -44,11 +45,34 @@
                         </div>
                     </label>
                 </div>
+                @else
+                <!-- Email Option Disabled -->
+                <div class="relative opacity-50">
+                    <div class="flex items-center p-4 bg-gray-500/10 backdrop-blur-sm rounded-lg border border-gray-500/20">
+                        <div class="flex-shrink-0">
+                            <div class="w-5 h-5 bg-gray-500 rounded-full border-2 border-gray-500/50 flex items-center justify-center">
+                                <div class="w-2 h-2 bg-gray-600 rounded-full"></div>
+                            </div>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <div class="flex items-center">
+                                <svg class="h-6 w-6 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-400">Email</p>
+                                    <p class="text-xs text-gray-500">Temporariamente indisponível</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endunless
 
                 <!-- WhatsApp Option -->
                 <div class="relative">
                     <input id="whatsapp-method" type="radio" name="method" value="whatsapp" class="sr-only" 
-                           {{ old('method') === 'whatsapp' ? 'checked' : '' }}>
+                           {{ old('method', config('mail_temp.force_whatsapp_only', false) ? 'whatsapp' : '') === 'whatsapp' ? 'checked' : '' }}>
                     <label for="whatsapp-method" class="flex items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-all duration-200">
                         <div class="flex-shrink-0">
                             <div class="w-5 h-5 bg-white rounded-full border-2 border-white/50 flex items-center justify-center">
@@ -62,7 +86,7 @@
                                 </svg>
                                 <div>
                                     <p class="text-sm font-medium text-white">WhatsApp</p>
-                                    <p class="text-xs text-purple-200">Enviar código via WhatsApp</p>
+                                    <p class="text-xs text-purple-200">Enviar link para {{ $user->phone }}</p>
                                 </div>
                             </div>
                         </div>
@@ -74,14 +98,14 @@
             <div id="phone-input" class="hidden">
                 <div>
                     <label for="phone" class="block text-sm font-medium text-white mb-2">
-                        Número do WhatsApp
+                        Número do WhatsApp (opcional - alterar)
                     </label>
                     <input id="phone" type="tel" name="phone" 
                            value="{{ old('phone', $user->phone) }}"
                            placeholder="(11) 99999-9999"
                            class="appearance-none rounded-lg relative block w-full px-3 py-3 border border-white/20 placeholder-purple-300 text-white bg-white/10 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:z-10 sm:text-sm">
                     <p class="mt-1 text-xs text-purple-200">
-                        Digite seu número com DDD. Exemplo: (11) 99999-9999
+                        Deixe como está ou altere se necessário. Formato: (11) 99999-9999
                     </p>
                 </div>
             </div>

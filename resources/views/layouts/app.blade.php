@@ -610,5 +610,36 @@
             showNotification('{{ session('warning') }}', 'warning');
         @endif
     </script>
+    
+    <!-- WhatsApp Integration -->
+    <script src="{{ asset('js/whatsapp-integrator.js') }}"></script>
+    <script src="{{ asset('js/rifassys-events.js') }}"></script>
+    <script src="{{ asset('js/whatsapp-examples.js') }}"></script>
+    
+    <script>
+        // WhatsApp integration functions
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('WhatsApp integration scripts loaded - ready to use when needed');
+        });
+        
+        // Global functions for easy access from other scripts
+        function testarWhatsApp() {
+            if (window.enviarVerificacaoCliente) {
+                window.enviarVerificacaoCliente({
+                    numeroWhatsApp: '5511999999999',
+                    nome: 'Teste',
+                    linkVerificacao: 'https://localhost:8084/verificar/teste'
+                });
+            }
+        }
+        
+        // Function to initialize WhatsApp when needed
+        function inicializarWhatsAppQuandoNecessario() {
+            if (window.inicializarWhatsApp) {
+                window.inicializarWhatsApp();
+                console.log('WhatsApp initialized on demand');
+            }
+        }
+    </script>
 </body>
 </html>

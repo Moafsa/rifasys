@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "message": "Mensagem enviada com sucesso via WuzAPI Mock",
+  "data": {
+    "id": "msg_12345",
+    "status": "sent",
+    "timestamp": "2025-10-16T03:45:00Z",
+    "recipient": "+5511999999999",
+    "message_type": "text"
+  },
+  "timestamp": "2025-10-16T03:45:00Z"
+}
+
+
+
+

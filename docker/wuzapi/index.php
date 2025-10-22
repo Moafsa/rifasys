@@ -183,6 +183,70 @@ switch ($path) {
         }
         break;
         
+    case '/whatsapp/enviar':
+        if ($method === 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Log the WhatsApp message with enhanced details
+            $logEntry = [
+                'timestamp' => date('Y-m-d H:i:s'),
+                'numero' => $input['numero'] ?? 'unknown',
+                'mensagem' => $input['mensagem'] ?? 'no message',
+                'tipo' => $input['tipo'] ?? 'unknown',
+                'timestamp_enviado' => $input['timestamp'] ?? date('c'),
+                'status' => 'sent',
+                'message_id' => 'msg_' . uniqid()
+            ];
+            
+            // Write to log file
+            file_put_contents('/tmp/wuzapi_messages.log', json_encode($logEntry) . "\n", FILE_APPEND);
+            
+            // Simulate different response based on message type
+            $responseMessage = match($input['tipo'] ?? '') {
+                'oferta' => 'Oferta enviada com sucesso via WhatsApp',
+                'preco' => 'Atualização de preço enviada com sucesso',
+                'verificacao' => 'Código de verificação enviado com sucesso',
+                'alerta' => 'Alerta enviado com sucesso',
+                'rifa' => 'Notificação de rifa enviada com sucesso',
+                'confirmacao_compra' => 'Confirmação de compra enviada com sucesso',
+                default => 'Mensagem enviada com sucesso via WhatsApp'
+            };
+            
+            echo json_encode([
+                'success' => true,
+                'message' => $responseMessage,
+                'data' => [
+                    'id' => 'msg_' . uniqid(),
+                    'status' => 'sent',
+                    'timestamp' => date('c'),
+                    'recipient' => $input['numero'] ?? 'unknown',
+                    'message_type' => $input['tipo'] ?? 'text',
+                    'message_length' => strlen($input['mensagem'] ?? '')
+                ],
+                'timestamp' => date('c')
+            ]);
+        }
+        break;
+        
+    case '/status':
+        if ($method === 'GET') {
+            echo json_encode([
+                'status' => 'connected',
+                'message' => 'WuzAPI Mock Server is running - WhatsApp Integration Ready',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'features' => [
+                    'whatsapp_messages' => true,
+                    'offers' => true,
+                    'price_updates' => true,
+                    'verifications' => true,
+                    'alerts' => true,
+                    'raffle_notifications' => true,
+                    'purchase_confirmations' => true
+                ]
+            ]);
+        }
+        break;
+        
     default:
         http_response_code(404);
         echo json_encode([

@@ -950,6 +950,21 @@ function confirmPurchase() {
             } else {
                 alert(data.message);
             }
+            
+            // 🎯 Disparar evento de compra realizada para WhatsApp
+            if (window.rifassysEvents) {
+                window.rifassysEvents.dispararCompraRealizada({
+                    rifa: '{{ $raffle->title }}',
+                    quantidade: selectedNumbers.length,
+                    valorTotal: (selectedNumbers.length * {{ $raffle->price_per_ticket }}).toFixed(2),
+                    numeros: selectedNumbers.join(', '),
+                    dataCompra: new Date().toLocaleDateString('pt-BR'),
+                    idTransacao: data.transaction_id || 'TXN-' + Date.now(),
+                    link: window.location.origin + '/raffles/{{ $raffle->id }}'
+                });
+                console.log('✅ Evento de compra disparado para WhatsApp');
+            }
+            
             closeNumberSelection();
             
             // Redirect to payment methods

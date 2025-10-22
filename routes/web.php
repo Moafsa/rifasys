@@ -117,6 +117,21 @@ Route::post('/password/reset', [App\Http\Controllers\Auth\ResetPasswordControlle
 // Test route for email
 Route::get('/test-email', [App\Http\Controllers\TestEmailController::class, 'testEmail'])->name('test.email');
 
+// WhatsApp integration test page
+Route::get('/whatsapp-test', function () {
+    return view('whatsapp-test');
+})->name('whatsapp.test');
+
+// WhatsApp examples page
+Route::get('/whatsapp-examples', function () {
+    return view('whatsapp-examples');
+})->name('whatsapp.examples');
+
+// WhatsApp configuration page
+Route::get('/whatsapp-config', function () {
+    return view('whatsapp-config');
+})->name('whatsapp.config');
+
 // Dashboard routes (protected - temporarily disabled)
 // Route::middleware(['auth'])->group(function () {
 //     Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
