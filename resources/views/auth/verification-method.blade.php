@@ -21,7 +21,7 @@
             @csrf
             
             <div class="space-y-4">
-                @unless(config('mail_temp.force_whatsapp_only', false))
+                @unless(config('mail.force_whatsapp_only', false))
                 <!-- Email Option -->
                 <div class="relative">
                     <input id="email-method" type="radio" name="method" value="email" class="sr-only" 
@@ -72,7 +72,7 @@
                 <!-- WhatsApp Option -->
                 <div class="relative">
                     <input id="whatsapp-method" type="radio" name="method" value="whatsapp" class="sr-only" 
-                           {{ old('method', config('mail_temp.force_whatsapp_only', false) ? 'whatsapp' : '') === 'whatsapp' ? 'checked' : '' }}>
+                           {{ old('method', config('mail.force_whatsapp_only', false) ? 'whatsapp' : '') === 'whatsapp' ? 'checked' : '' }}>
                     <label for="whatsapp-method" class="flex items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 cursor-pointer hover:bg-white/20 transition-all duration-200">
                         <div class="flex-shrink-0">
                             <div class="w-5 h-5 bg-white rounded-full border-2 border-white/50 flex items-center justify-center">
@@ -129,16 +129,6 @@
             </div>
         </form>
 
-        <!-- WuzAPI Status -->
-        <div class="mt-6 p-4 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
-            <div class="flex items-center justify-between">
-                <span class="text-sm text-purple-200">Status do WhatsApp:</span>
-                <div class="flex items-center">
-                    <div id="wuzapi-status" class="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
-                    <span id="wuzapi-text" class="text-xs text-purple-200">Verificando...</span>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -206,33 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
         e.target.value = value;
     });
 
-    // Check WuzAPI status
-    async function checkWuzAPIStatus() {
-        try {
-            const response = await fetch('/api/wuzapi/status');
-            const data = await response.json();
-            
-            const statusDot = document.getElementById('wuzapi-status');
-            const statusText = document.getElementById('wuzapi-text');
-            
-            if (data.connected) {
-                statusDot.className = 'w-2 h-2 bg-green-400 rounded-full mr-2';
-                statusText.textContent = 'Conectado';
-            } else {
-                statusDot.className = 'w-2 h-2 bg-red-400 rounded-full mr-2';
-                statusText.textContent = 'Desconectado';
-            }
-        } catch (error) {
-            const statusDot = document.getElementById('wuzapi-status');
-            const statusText = document.getElementById('wuzapi-text');
-            
-            statusDot.className = 'w-2 h-2 bg-red-400 rounded-full mr-2';
-            statusText.textContent = 'Erro na conexão';
-        }
-    }
-
-    // Check status on load
-    checkWuzAPIStatus();
 });
 </script>
 @endsection

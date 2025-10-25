@@ -152,7 +152,12 @@
                 <!-- Navigation -->
                 <nav class="hidden md:flex space-x-8">
                         <a href="{{ route('home') }}" class="header-link text-white hover:text-purple-300 transition-colors">Home</a>
-                        <a href="{{ route('raffles.index') }}" class="header-link text-white hover:text-purple-300 transition-colors">Marketplace</a>
+                        <a href="{{ route('marketplace.index') }}" class="header-link text-white hover:text-purple-300 transition-colors">Marketplace</a>
+                        @auth
+                        <a href="{{ route('wuzapi-manager.dashboard') }}" class="header-link text-white hover:text-purple-300 transition-colors">
+                            <i class="fab fa-whatsapp"></i> WuzAPI Manager
+                        </a>
+                        @endauth
                         <a href="{{ route('about') }}" class="header-link text-white hover:text-purple-300 transition-colors">Sobre Nós</a>
                         <a href="{{ route('contact') }}" class="header-link text-white hover:text-purple-300 transition-colors">Contato</a>
                 </nav>
@@ -237,7 +242,12 @@
         <div id="mobile-menu" class="md:hidden bg-white border-t border-gray-200 hidden">
             <div class="px-4 py-4 space-y-4">
                 <a href="{{ route('home') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">Home</a>
-                <a href="{{ route('raffles.index') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">Marketplace</a>
+                <a href="{{ route('marketplace.index') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">Marketplace</a>
+                @auth
+                <a href="{{ route('wuzapi-manager.dashboard') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">
+                    <i class="fab fa-whatsapp"></i> WuzAPI Manager
+                </a>
+                @endauth
                 <a href="{{ route('about') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">Sobre Nós</a>
                 <a href="{{ route('contact') }}" class="block text-gray-700 hover:text-purple-600 transition-colors">Contato</a>
                 

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\EmailVerification;
 use App\Models\WhatsAppVerification;
 use App\Models\User;
-use App\Services\WuzapiService;
+use App\Services\WuzapiRaffles;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -15,17 +15,17 @@ use Illuminate\Http\RedirectResponse;
 
 class VerificationController extends Controller
 {
-    protected WuzapiService $wuzapiService;
+    protected WuzapiRaffles $wuzapiRaffles;
 
-    public function __construct(WuzapiService $wuzapiService)
+    public function __construct(WuzapiRaffles $wuzapiRaffles)
     {
-        $this->wuzapiService = $wuzapiService;
+        $this->wuzapiRaffles = $wuzapiRaffles;
     }
 
     /**
      * Show verification method selection page.
      */
-    public function showMethodSelection(): View
+    public function showMethodSelection()
     {
         $user = auth()->user();
         
@@ -75,8 +75,8 @@ class VerificationController extends Controller
                     ->with('error', 'Número de telefone não configurado. Configure seu telefone para usar verificação via WhatsApp.');
             }
 
-            // Validar formato do telefone
-            if (!$this->wuzapiService->validatePhone($user->phone)) {
+            // Validar formato do telefone (basic validation)
+            if (empty($user->phone) || strlen(preg_replace('/\D/', '', $user->phone)) < 10) {
                 return redirect()->route('verification.method')
                     ->with('error', 'Número de telefone inválido. Verifique o formato do seu número.');
             }
@@ -113,23 +113,12 @@ class VerificationController extends Controller
     private function sendWhatsAppVerificationMessage(User $user, string $verificationLink): void
     {
         try {
-            // Formatar número para WhatsApp
-            $numeroWhatsApp = $this->formatarNumeroWhatsApp($user->phone);
-            
-            // Preparar dados para o WhatsApp
-            $dadosCliente = [
-                'nome' => $user->name,
-                'numeroWhatsApp' => $numeroWhatsApp,
-                'linkVerificacao' => $verificationLink,
-                'email' => $user->email
-            ];
-
-            // Enviar via WuzAPI
-            $this->enviarWhatsAppViaAPI($dadosCliente);
+            // Enviar via WuzapiRaffles
+            $this->wuzapiRaffles->sendVerificationLink($user->phone, $verificationLink, $user->name);
 
             \Log::info('WhatsApp verification sent to user', [
                 'user_id' => $user->id,
-                'phone' => $numeroWhatsApp
+                'phone' => $user->phone
             ]);
 
         } catch (\Exception $e) {
@@ -348,8 +337,8 @@ class VerificationController extends Controller
                 return back()->with('error', 'Número de telefone é obrigatório para verificação via WhatsApp.');
             }
 
-            // Validate phone format
-            if (!$this->wuzapiService->validatePhone($phone)) {
+            // Validate phone format (basic validation)
+            if (empty($phone) || strlen(preg_replace('/\D/', '', $phone)) < 10) {
                 return back()->with('error', 'Número de telefone inválido. Use o formato: (11) 99999-9999');
             }
 
@@ -398,9 +387,10 @@ class VerificationController extends Controller
      */
     public function checkWuzAPIStatus(): array
     {
+        $wuzapiService = app(\App\Services\WuzapiService::class);
         return [
-            'connected' => $this->wuzapiService->checkConnection(),
-            'qr_code' => $this->wuzapiService->getQRCode()
+            'connected' => $wuzapiService->isConnected(),
+            'qr_code' => $wuzapiService->getQRCode()
         ];
     }
 }

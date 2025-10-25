@@ -693,15 +693,6 @@
                 <p class="text-gray-600">Pessoas participando das rifas</p>
             </div>
             
-            <!-- Total Arrecadado -->
-            <div class="text-center scroll-animate hover-lift" style="animation-delay: 0.4s;">
-                <div class="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">💰</span>
-                </div>
-                <h3 class="text-4xl font-bold text-green-600 mb-2">R$ {{ number_format($raffleStats['total_amount_raised'], 2, ',', '.') }}</h3>
-                <p class="text-xl font-semibold text-gray-900 mb-2">Arrecadado</p>
-                <p class="text-gray-600">Valor total em causas solidárias</p>
-            </div>
         </div>
     </div>
 </section>
@@ -916,7 +907,7 @@
                     <span class="text-2xl text-gray-400 faq-icon">+</span>
                 </button>
                 <div class="px-6 pb-6 text-gray-600 hidden faq-content">
-                    <p>Criar uma rifa é completamente gratuito! Cobramos apenas uma pequena taxa sobre os valores arrecadados, apenas quando a rifa é bem-sucedida.</p>
+                    <p>Criar uma rifa é completamente gratuito! Cobramos apenas uma pequena taxa sobre as vendas, apenas quando a rifa é bem-sucedida.</p>
                 </div>
             </div>
         </div>

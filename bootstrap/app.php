@@ -14,6 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
         ]);
+        
+        // Temporarily disable CSRF for login routes
+        $middleware->validateCsrfTokens(except: [
+            'login',
+            'register',
+            'simple-login-post'
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

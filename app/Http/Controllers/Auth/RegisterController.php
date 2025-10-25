@@ -50,7 +50,7 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'min:2'],
             'email' => [
                 'required', 
                 'string', 
@@ -59,17 +59,19 @@ class RegisterController extends Controller
                 'unique:users',
                 'regex:/^[a-zA-Z0-9._%+-]+@gmail\.com$/'
             ],
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', 'min:10'],
             'document' => ['required', 'string', 'max:20'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'terms' => ['required', 'accepted'],
         ], [
             'name.required' => 'O campo nome é obrigatório.',
+            'name.min' => 'O nome deve ter pelo menos 2 caracteres.',
             'email.required' => 'O campo Gmail é obrigatório.',
             'email.email' => 'Por favor, insira um endereço de email válido.',
             'email.regex' => 'Apenas contas Gmail são permitidas (@gmail.com).',
             'email.unique' => 'Este Gmail já está cadastrado. Use outro endereço ou faça login.',
             'phone.required' => 'O campo telefone é obrigatório.',
+            'phone.min' => 'O telefone deve ter pelo menos 10 dígitos.',
             'document.required' => 'O campo CPF é obrigatório.',
             'password.required' => 'O campo senha é obrigatório.',
             'password.min' => 'A senha deve ter pelo menos 8 caracteres.',

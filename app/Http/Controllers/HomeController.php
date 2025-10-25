@@ -40,11 +40,6 @@ class HomeController extends Controller
         $raffleStats = [
             'total_active_raffles' => Raffle::active()->count(),
             'total_tickets_sold' => Raffle::active()->sum('sold_tickets'),
-            'total_amount_raised' => Raffle::active()
-                ->get()
-                ->sum(function ($raffle) {
-                    return $raffle->sold_tickets * $raffle->price_per_ticket;
-                }),
         ];
 
         return view('home', compact('activeRaffles', 'bestSellingRaffles', 'wellRatedRaffles', 'raffleStats'));

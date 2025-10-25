@@ -79,24 +79,16 @@ class LoginController extends Controller
             ])->onlyInput('email');
         }
 
-        // Check if email is verified before attempting login
-        if (!$user->hasVerifiedEmail()) {
-            // Create and send new verification email
-            $verification = EmailVerification::createForUser($user);
-            $this->sendVerificationEmail($user, $verification);
-            
-            // Fazer login primeiro para poder acessar a página de verificação
-            Auth::login($user);
-            
-            return redirect()->route('verification.method')
-                ->with('error', 'Você precisa verificar sua conta antes de continuar. Escolha como deseja receber o código de verificação.');
-        }
-
+        // Attempt login first
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
             
-            // FORÇAR verificação após login
+            // Check if email is verified after successful login
             if (!$user->hasVerifiedEmail()) {
+                // Create and send new verification email
+                $verification = EmailVerification::createForUser($user);
+                $this->sendVerificationEmail($user, $verification);
+                
                 return redirect()->route('verification.method')
                     ->with('error', 'Você precisa verificar sua conta antes de continuar. Escolha como deseja receber o código de verificação.');
             }

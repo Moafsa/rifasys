@@ -13,7 +13,7 @@
                    </p>
                     <div class="mt-4">
                         <div class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 text-sm font-medium rounded-lg">
-                            ⚠️ Apenas contas Gmail são aceitas (@gmail.com)
+                            Apenas contas Gmail são aceitas (@gmail.com)
                         </div>
                     </div>
                </div>
@@ -29,7 +29,7 @@
                     <!-- Name -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                            Nome Completo *
+                            Nome Completo <span class="text-red-500">*</span>
                         </label>
                         <input type="text" 
                                id="name" 
@@ -37,7 +37,9 @@
                                value="{{ old('name') }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('name') border-red-500 @enderror"
                                placeholder="Digite seu nome completo"
-                               required>
+                               required
+                               minlength="2"
+                               maxlength="255">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -46,7 +48,7 @@
                     <!-- Email -->
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                            Gmail *
+                            Gmail <span class="text-red-500">*</span>
                         </label>
                         <input type="email" 
                                id="email" 
@@ -54,8 +56,10 @@
                                value="{{ old('email') }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('email') border-red-500 @enderror"
                                placeholder="seuemail@gmail.com"
-                               required>
-                        <p class="mt-1 text-xs text-gray-500">⚠️ Apenas contas Gmail são aceitas</p>
+                               required
+                               pattern="[a-zA-Z0-9._%+-]+@gmail\.com$"
+                               title="Apenas contas Gmail são aceitas">
+                        <p class="mt-1 text-xs text-gray-500">Apenas contas Gmail são aceitas</p>
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -64,7 +68,7 @@
                     <!-- Phone -->
                     <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                            Telefone/WhatsApp *
+                            Telefone/WhatsApp <span class="text-red-500">*</span>
                         </label>
                         <input type="tel" 
                                id="phone" 
@@ -72,7 +76,11 @@
                                value="{{ old('phone') }}"
                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('phone') border-red-500 @enderror"
                                placeholder="(11) 99999-9999"
-                               required>
+                               required
+                               minlength="10"
+                               maxlength="20"
+                               pattern="[0-9\(\)\-\s]+"
+                               title="Digite um número de telefone válido">
                         @error('phone')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -165,20 +173,20 @@
 
                     <!-- Submit Button -->
                     <button type="submit" 
-                            class="w-full bg-purple-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center space-x-2">
-                        <span>✨</span>
-                        <span>Criar Minha Conta</span>
+                            class="w-full bg-purple-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors duration-200">
+                        Criar Minha Conta
                     </button>
                 </form>
 
                 <!-- Login Link -->
                 <div class="mt-6 text-center">
-                    <p class="text-gray-600">
-                        Já tem uma conta? 
-                        <a href="{{ route('login') }}" class="text-purple-600 hover:text-purple-700 font-semibold">
-                            Faça login aqui
-                        </a>
+                    <p class="text-gray-600 mb-3">
+                        Já tenho conta
                     </p>
+                    <a href="{{ route('login') }}" 
+                       class="inline-block bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors duration-200">
+                        Fazer Login
+                    </a>
                 </div>
             </div>
 
@@ -339,6 +347,41 @@ document.getElementById('toggle-password-confirm').addEventListener('click', fun
         eyeOpen.classList.remove('hidden');
         eyeClosed.classList.add('hidden');
         slash.classList.add('hidden');
+    }
+});
+
+// Validação obrigatória dos campos
+document.querySelector('form').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    
+    let isValid = true;
+    let errorMessage = '';
+    
+    // Validar Nome
+    if (!name || name.length < 2) {
+        isValid = false;
+        errorMessage += '• Nome completo é obrigatório (mínimo 2 caracteres)\n';
+    }
+    
+    // Validar Gmail
+    if (!email || !email.endsWith('@gmail.com')) {
+        isValid = false;
+        errorMessage += '• Gmail é obrigatório e deve terminar com @gmail.com\n';
+    }
+    
+    // Validar Telefone
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (!phone || phoneDigits.length < 10) {
+        isValid = false;
+        errorMessage += '• Telefone é obrigatório (mínimo 10 dígitos)\n';
+    }
+    
+    if (!isValid) {
+        e.preventDefault();
+        alert('Por favor, corrija os seguintes erros:\n\n' + errorMessage);
+        return false;
     }
 });
 </script>

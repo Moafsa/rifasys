@@ -92,20 +92,20 @@
 
                     <!-- Submit Button -->
                     <button type="submit" 
-                            class="w-full bg-purple-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center space-x-2">
-                        <span>🚀</span>
-                        <span>Entrar</span>
+                            class="w-full bg-purple-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:bg-purple-700 transition-colors duration-200">
+                        Entrar
                     </button>
                 </form>
 
                 <!-- Register Link -->
                 <div class="mt-6 text-center">
-                    <p class="text-gray-600">
-                        Não tem uma conta? 
-                        <a href="{{ route('register') }}" class="text-purple-600 hover:text-purple-700 font-semibold">
-                            Cadastre-se grátis
-                        </a>
+                    <p class="text-gray-600 mb-3">
+                        Não tenho uma conta
                     </p>
+                    <a href="{{ route('register') }}" 
+                       class="inline-block bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-200 transition-colors duration-200">
+                        Criar Conta
+                    </a>
                 </div>
 
                 <!-- Gmail Login -->

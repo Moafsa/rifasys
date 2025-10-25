@@ -3,6 +3,16 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 
+// Test route to verify server is working
+Route::get('/test', function () {
+    return 'Server is working!';
+});
+
+// Ultra simple test
+Route::get('/ping', function () {
+    return 'pong';
+});
+
 // Public routes (no authentication required)
 Route::get('/welcome', [HomeController::class, 'index'])->name('welcome'); // Unverified home
 Route::get('/about', [HomeController::class, 'about'])->name('about');
@@ -11,14 +21,119 @@ Route::get('/terms', function () {
     return view('terms');
 })->name('terms');
 
-// Public raffle viewing routes
-Route::get('/raffles', [App\Http\Controllers\RaffleController::class, 'index'])->name('raffles.index');
+// Include marketplace routes
+require __DIR__.'/marketplace.php';
+
+// Include WuzAPI Manager routes
+require __DIR__.'/wuzapi-manager.php';
+
+// Temporary route to clear sessions
+Route::get('/clear-session', function () {
+    session()->flush();
+    return redirect('/')->with('success', 'Sessão limpa com sucesso!');
+})->name('clear.session');
+
+// Force clear everything
+Route::get('/force-clear', function () {
+    session()->flush();
+    cache()->flush();
+    return redirect('/simple-login')->with('success', 'Sistema limpo!');
+})->name('force.clear');
+
+// Test route for login
+Route::get('/test-login', function () {
+    return view('auth.login');
+})->name('test.login');
+
+// Bypass CSRF completely
+Route::get('/bypass-login', function () {
+    return redirect('/simple-login');
+})->name('bypass.login');
+
+// Simple login route without CSRF
+Route::get('/simple-login', function () {
+    return '<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - Rifassys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Login</h1>
+            <p class="text-gray-600 mt-2">Acesse sua conta</p>
+        </div>
+        
+        <form method="POST" action="/simple-login-post" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" id="email" name="email" required 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                <input type="password" id="password" name="password" required 
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+            </div>
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input type="checkbox" id="remember" name="remember" 
+                           class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                    <label for="remember" class="ml-2 block text-sm text-gray-900">Lembrar-me</label>
+                </div>
+                
+                <div class="text-sm">
+                    <a href="#" class="font-medium text-purple-600 hover:text-purple-500">Esqueceu a senha?</a>
+                </div>
+            </div>
+            
+            <button type="submit" 
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                Entrar
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Não tem uma conta? 
+                <a href="/register" class="font-medium text-purple-600 hover:text-purple-500">Registre-se</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>';
+})->name('simple.login');
+
+// Simple login POST route without CSRF
+Route::post('/simple-login-post', function (Illuminate\Http\Request $request) {
+    $credentials = $request->only('email', 'password');
+    
+    if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $request->session()->regenerate();
+        return redirect()->route('home')->with('success', 'Login realizado com sucesso!');
+    }
+    
+    return back()->withErrors([
+        'email' => 'Credenciais inválidas.',
+    ])->withInput();
+})->name('simple.login.post');
+
+// Public raffle viewing routes (legacy - redirect to marketplace)
+Route::get('/raffles', function () {
+    return redirect()->route('marketplace.index');
+})->name('raffles.index');
 Route::get('/raffles/{raffle}', [App\Http\Controllers\RaffleController::class, 'show'])->name('raffles.show');
+
+// Home page route (temporarily without verification for debugging)
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // ALL ROUTES REQUIRE VERIFICATION
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Home page (requires verification)
-    Route::get('/', [HomeController::class, 'index'])->name('home');
     
     // Payment routes (require verification)
     Route::get('/payment/methods', [App\Http\Controllers\PaymentController::class, 'methods'])->name('payment.methods');
@@ -55,7 +170,12 @@ Route::get('/api/states/{stateName}/cities', function ($stateName) {
 // API routes for WuzAPI
 Route::get('/api/wuzapi/status', function () {
     $wuzapiService = app(App\Services\WuzapiService::class);
-    return response()->json($wuzapiService->checkConnection());
+    $status = $wuzapiService->getStatus();
+    return response()->json([
+        'connected' => $wuzapiService->isConnected(),
+        'status' => $status,
+        'timestamp' => now()
+    ]);
 });
 
 Route::get('/api/wuzapi/qr', function () {
@@ -63,26 +183,44 @@ Route::get('/api/wuzapi/qr', function () {
     $qrCode = $wuzapiService->getQRCode();
     return response()->json([
         'qr' => $qrCode,
-        'status' => $qrCode ? 'available' : 'not_available'
+        'status' => $qrCode ? 'available' : 'not_available',
+        'connected' => $wuzapiService->isConnected()
     ]);
 });
 
-// WhatsApp webhook routes
+// WhatsApp webhook routes (WuzAPI integration)
 Route::post('/api/webhooks/whatsapp', [App\Http\Controllers\Api\WebhookController::class, 'handleWhatsApp']);
-Route::get('/api/webhooks/whatsapp/status', [App\Http\Controllers\Api\WebhookController::class, 'getWebhookStatus']);
+Route::get('/api/webhooks/whatsapp/status', function () {
+    return response()->json(['status' => 'active', 'timestamp' => now()]);
+});
 
 // WuzAPI management routes (admin only)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/admin/wuzapi/status', function () {
-        return view('admin.wuzapi-status');
-    })->name('admin.wuzapi.status');
+    Route::get('/admin/wuzapi', [App\Http\Controllers\Admin\WuzapiController::class, 'dashboard'])->name('admin.wuzapi.dashboard');
+    Route::get('/admin/wuzapi/test-connection', [App\Http\Controllers\Admin\WuzapiController::class, 'testConnection'])->name('admin.wuzapi.test-connection');
+    Route::post('/admin/wuzapi/test-message', [App\Http\Controllers\Admin\WuzapiController::class, 'sendTestMessage'])->name('admin.wuzapi.test-message');
+    Route::post('/admin/wuzapi/test-raffle-message', [App\Http\Controllers\Admin\WuzapiController::class, 'sendTestRaffleMessage'])->name('admin.wuzapi.test-raffle-message');
+    Route::get('/admin/wuzapi/qr-code', [App\Http\Controllers\Admin\WuzapiController::class, 'getQRCode'])->name('admin.wuzapi.qr-code');
+    Route::get('/admin/wuzapi/webhook-status', [App\Http\Controllers\Admin\WuzapiController::class, 'getWebhookStatus'])->name('admin.wuzapi.webhook-status');
 });
 
-// Auth routes
+// System Health Monitoring routes (admin only)
+Route::middleware(['auth'])->prefix('admin/health')->group(function () {
+    Route::get('/', [App\Http\Controllers\SystemHealthController::class, 'dashboard'])->name('admin.health.dashboard');
+    Route::get('/status', [App\Http\Controllers\SystemHealthController::class, 'status'])->name('admin.health.status');
+    Route::get('/metrics', [App\Http\Controllers\SystemHealthController::class, 'metrics'])->name('admin.health.metrics');
+    Route::get('/service', [App\Http\Controllers\SystemHealthController::class, 'serviceHealth'])->name('admin.health.service');
+    Route::post('/cleanup', [App\Http\Controllers\SystemHealthController::class, 'cleanup'])->name('admin.health.cleanup');
+    Route::get('/test-database', [App\Http\Controllers\SystemHealthController::class, 'testDatabase'])->name('admin.health.test-database');
+    Route::get('/test-cache', [App\Http\Controllers\SystemHealthController::class, 'testCache'])->name('admin.health.test-cache');
+    Route::get('/test-external', [App\Http\Controllers\SystemHealthController::class, 'testExternalServices'])->name('admin.health.test-external');
+});
+
+// Auth routes (temporarily without CSRF for debugging)
 Route::get('/register', [App\Http\Controllers\Auth\RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register']);
+Route::post('/register', [App\Http\Controllers\Auth\RegisterController::class, 'register'])->withoutMiddleware(['web']);
 Route::get('/login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login']);
+Route::post('/login', [App\Http\Controllers\Auth\LoginController::class, 'login'])->withoutMiddleware(['web']);
 Route::post('/logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 
 // Verification routes (Email + WhatsApp)

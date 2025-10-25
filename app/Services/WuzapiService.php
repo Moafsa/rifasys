@@ -5,23 +5,31 @@ namespace App\Services;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class WuzapiService
 {
     protected Client $client;
     protected string $baseUrl;
+    protected string $apiToken;
+    protected string $instanceId;
 
     public function __construct()
     {
-        $this->baseUrl = config('services.wuzapi.url', 'http://wuzapi:8081');
+        $this->baseUrl = config('services.wuzapi.url', 'http://localhost:8081');
+        $this->apiToken = config('services.wuzapi.api_token');
+        $this->instanceId = config('services.wuzapi.instance_id');
         
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
             'timeout' => 30,
+            'connect_timeout' => 10,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
+                'Token' => $this->apiToken,
             ],
+            'http_errors' => false,
         ]);
     }
 
@@ -40,33 +48,120 @@ class WuzapiService
 
             $result = json_decode($response->getBody()->getContents(), true);
             
-            Log::info('WuzAPI Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                Log::info('WuzAPI Message Sent', [
+                    'phone' => $this->formatPhone($phone),
+                    'status' => $result['status'] ?? 'unknown'
+                ]);
+                return $result;
+            } else {
+                Log::error('WuzAPI Send Message Error', [
+                    'phone' => $phone,
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
         } catch (GuzzleException $e) {
-            Log::warning('WuzAPI Send Message Failed - Using Mock Mode', [
+            Log::error('WuzAPI Send Message Exception', [
                 'phone' => $phone,
-                'message' => $message,
                 'error' => $e->getMessage()
             ]);
-            
-            // Mock response for development
-            return [
-                'status' => 'sent',
-                'message' => 'Message sent successfully (mock)',
-                'phone' => $this->formatPhone($phone),
-                'timestamp' => now()->toDateTimeString()
-            ];
+            return null;
         }
     }
 
     /**
-     * Send message with buttons (for verification confirmation)
+     * Send media message (image, document, etc.)
      */
-    public function sendButtonMessage(string $phone, string $message, array $buttons): ?array
+    public function sendMedia(string $phone, string $mediaUrl, string $caption = '', string $mediaType = 'image'): ?array
+    {
+        try {
+            $response = $this->client->post('/api/send-media', [
+                'json' => [
+                    'phone' => $this->formatPhone($phone),
+                    'media_url' => $mediaUrl,
+                    'caption' => $caption,
+                    'media_type' => $mediaType,
+                ],
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+            
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                Log::info('WuzAPI Media Sent', [
+                    'phone' => $this->formatPhone($phone),
+                    'media_type' => $mediaType,
+                    'status' => $result['status'] ?? 'unknown'
+                ]);
+                return $result;
+            } else {
+                Log::error('WuzAPI Send Media Error', [
+                    'phone' => $phone,
+                    'media_type' => $mediaType,
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
+        } catch (GuzzleException $e) {
+            Log::error('WuzAPI Send Media Exception', [
+                'phone' => $phone,
+                'media_type' => $mediaType,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Send location message
+     */
+    public function sendLocation(string $phone, float $latitude, float $longitude, string $name = '', string $address = ''): ?array
+    {
+        try {
+            $response = $this->client->post('/api/send-location', [
+                'json' => [
+                    'phone' => $this->formatPhone($phone),
+                    'latitude' => $latitude,
+                    'longitude' => $longitude,
+                    'name' => $name,
+                    'address' => $address,
+                ],
+            ]);
+
+            $result = json_decode($response->getBody()->getContents(), true);
+            
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                Log::info('WuzAPI Location Sent', [
+                    'phone' => $this->formatPhone($phone),
+                    'location' => "{$latitude},{$longitude}",
+                    'status' => $result['status'] ?? 'unknown'
+                ]);
+                return $result;
+            } else {
+                Log::error('WuzAPI Send Location Error', [
+                    'phone' => $phone,
+                    'location' => "{$latitude},{$longitude}",
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
+        } catch (GuzzleException $e) {
+            Log::error('WuzAPI Send Location Exception', [
+                'phone' => $phone,
+                'location' => "{$latitude},{$longitude}",
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Send button message
+     */
+    public function sendButtons(string $phone, string $message, array $buttons): ?array
     {
         try {
             $response = $this->client->post('/api/send-buttons', [
@@ -79,17 +174,25 @@ class WuzapiService
 
             $result = json_decode($response->getBody()->getContents(), true);
             
-            Log::info('WuzAPI Button Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'buttons_count' => count($buttons),
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                Log::info('WuzAPI Buttons Sent', [
+                    'phone' => $this->formatPhone($phone),
+                    'buttons_count' => count($buttons),
+                    'status' => $result['status'] ?? 'unknown'
+                ]);
+                return $result;
+            } else {
+                Log::error('WuzAPI Send Buttons Error', [
+                    'phone' => $phone,
+                    'buttons_count' => count($buttons),
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
         } catch (GuzzleException $e) {
-            Log::error('WuzAPI Send Button Message Error', [
+            Log::error('WuzAPI Send Buttons Exception', [
                 'phone' => $phone,
-                'message' => $message,
                 'buttons' => $buttons,
                 'error' => $e->getMessage()
             ]);
@@ -98,91 +201,42 @@ class WuzapiService
     }
 
     /**
-     * Send verification link via WhatsApp
+     * Send list message
      */
-    public function sendVerificationLink(string $phone, string $verificationLink, string $userName = ''): ?array
-    {
-        $message = "🎯 *RAFE - Plataforma de Rifas*\n\n";
-        $message .= "Olá" . ($userName ? " {$userName}" : "") . "!\n\n";
-        $message .= "Clique no link abaixo para verificar sua conta:\n\n";
-        $message .= "🔗 *Link de Verificação:*\n";
-        $message .= "{$verificationLink}\n\n";
-        $message .= "⏰ Este link expira em 3 minutos.\n";
-        $message .= "Se você não solicitou esta verificação, ignore esta mensagem.\n\n";
-        $message .= "✨ *RAFE - Conectando pessoas através de rifas solidárias*";
-
-        return $this->sendMessage($phone, $message);
-    }
-
-    /**
-     * Send verification code message (legacy)
-     */
-    public function sendVerificationCode(string $phone, string $code, string $userName = ''): ?array
-    {
-        $message = "🎯 *RAFE - Plataforma de Rifas*\n\n";
-        $message .= "Olá" . ($userName ? " {$userName}" : "") . "!\n\n";
-        $message .= "Seu código de verificação é:\n";
-        $message .= "🔐 *{$code}*\n\n";
-        $message .= "Este código expira em 3 minutos.\n";
-        $message .= "Se você não solicitou este código, ignore esta mensagem.\n\n";
-        $message .= "✨ *RAFE - Conectando pessoas através de rifas solidárias*";
-
-        return $this->sendMessage($phone, $message);
-    }
-
-    /**
-     * Send verification confirmation message with buttons
-     */
-    public function sendVerificationConfirmation(string $phone, string $userName = ''): ?array
-    {
-        $message = "🎯 *RAFE - Plataforma de Rifas*\n\n";
-        $message .= "Olá" . ($userName ? " {$userName}" : "") . "!\n\n";
-        $message .= "Você está tentando verificar sua conta na RAFE.\n";
-        $message .= "É você que está acessando nossa plataforma?\n\n";
-        $message .= "Clique no botão abaixo para confirmar:";
-
-        $buttons = [
-            [
-                'id' => 'confirm_verification',
-                'title' => '✅ Sim, sou eu'
-            ],
-            [
-                'id' => 'deny_verification', 
-                'title' => '❌ Não sou eu'
-            ]
-        ];
-
-        return $this->sendButtonMessage($phone, $message, $buttons);
-    }
-
-    /**
-     * Send template message (for approved WhatsApp templates)
-     */
-    public function sendTemplateMessage(string $phone, string $templateName, array $parameters = []): ?array
+    public function sendList(string $phone, string $message, string $buttonText, array $sections): ?array
     {
         try {
-            $response = $this->client->post('/api/send-template', [
+            $response = $this->client->post('/api/send-list', [
                 'json' => [
                     'phone' => $this->formatPhone($phone),
-                    'template_name' => $templateName,
-                    'parameters' => $parameters,
+                    'message' => $message,
+                    'button_text' => $buttonText,
+                    'sections' => $sections,
                 ],
             ]);
 
             $result = json_decode($response->getBody()->getContents(), true);
             
-            Log::info('WuzAPI Template Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'template' => $templateName,
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                Log::info('WuzAPI List Sent', [
+                    'phone' => $this->formatPhone($phone),
+                    'sections_count' => count($sections),
+                    'status' => $result['status'] ?? 'unknown'
+                ]);
+                return $result;
+            } else {
+                Log::error('WuzAPI Send List Error', [
+                    'phone' => $phone,
+                    'sections_count' => count($sections),
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
         } catch (GuzzleException $e) {
-            Log::error('WuzAPI Send Template Message Error', [
+            Log::error('WuzAPI Send List Exception', [
                 'phone' => $phone,
-                'template' => $templateName,
-                'parameters' => $parameters,
+                'sections' => $sections,
                 'error' => $e->getMessage()
             ]);
             return null;
@@ -190,26 +244,33 @@ class WuzapiService
     }
 
     /**
-     * Check WuzAPI connection status
+     * Get connection status
      */
-    public function checkConnection(): bool
+    public function getStatus(): ?array
     {
         try {
             $response = $this->client->get('/api/status');
             $result = json_decode($response->getBody()->getContents(), true);
             
-            return isset($result['status']) && $result['status'] === 'connected';
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                return $result;
+            } else {
+                Log::error('WuzAPI Get Status Error', [
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
         } catch (GuzzleException $e) {
-            Log::warning('WuzAPI Connection Check Failed - Using Mock Mode', [
+            Log::error('WuzAPI Get Status Exception', [
                 'error' => $e->getMessage()
             ]);
-            // Return true for development - we'll use mock mode
-            return true;
+            return null;
         }
     }
 
     /**
-     * Get QR Code for WhatsApp connection
+     * Get QR code for WhatsApp connection
      */
     public function getQRCode(): ?string
     {
@@ -217,13 +278,58 @@ class WuzapiService
             $response = $this->client->get('/api/qr');
             $result = json_decode($response->getBody()->getContents(), true);
             
-            return $result['qr'] ?? null;
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                return $result['qr'] ?? null;
+            } else {
+                Log::error('WuzAPI Get QR Code Error', [
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
         } catch (GuzzleException $e) {
-            Log::error('WuzAPI QR Code Error', [
+            Log::error('WuzAPI Get QR Code Exception', [
                 'error' => $e->getMessage()
             ]);
             return null;
         }
+    }
+
+    /**
+     * Get message status
+     */
+    public function getMessageStatus(string $messageId): ?array
+    {
+        try {
+            $response = $this->client->get("/api/message/{$messageId}/status");
+            $result = json_decode($response->getBody()->getContents(), true);
+            
+            if ($response->getStatusCode() >= 200 && $response->getStatusCode() < 300) {
+                return $result;
+            } else {
+                Log::error('WuzAPI Get Message Status Error', [
+                    'message_id' => $messageId,
+                    'status_code' => $response->getStatusCode(),
+                    'response' => $result
+                ]);
+                return null;
+            }
+        } catch (GuzzleException $e) {
+            Log::error('WuzAPI Get Message Status Exception', [
+                'message_id' => $messageId,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Check if WhatsApp is connected
+     */
+    public function isConnected(): bool
+    {
+        $status = $this->getStatus();
+        return isset($status['status']) && $status['status'] === 'connected';
     }
 
     /**
@@ -261,156 +367,6 @@ class WuzapiService
         // Brazilian phone numbers with country code should be 13 digits
         // Format: 55XXXXXXXXXXX (55 + 2 digit area code + 8 or 9 digit number)
         return strlen($formatted) === 13 && substr($formatted, 0, 2) === '55';
-    }
-
-    /**
-     * Send purchase confirmation message
-     */
-    public function sendPurchaseConfirmation(string $phone, array $purchaseData): ?array
-    {
-        $message = "🎉 *RAFE - Compra Confirmada!*\n\n";
-        $message .= "Olá {$purchaseData['user_name']}!\n\n";
-        $message .= "✅ Sua compra foi confirmada:\n";
-        $message .= "🎫 Rifa: {$purchaseData['raffle_title']}\n";
-        $message .= "🔢 Números: " . implode(', ', $purchaseData['numbers']) . "\n";
-        $message .= "💰 Valor: R$ " . number_format($purchaseData['total_amount'], 2, ',', '.') . "\n\n";
-        $message .= "Boa sorte! 🍀\n\n";
-        $message .= "*RAFE - Conectando pessoas através de rifas solidárias*";
-
-        return $this->sendMessage($phone, $message);
-    }
-
-    /**
-     * Get detailed connection status
-     */
-    public function getDetailedStatus(): array
-    {
-        try {
-            $response = $this->client->get('/api/status');
-            $result = json_decode($response->getBody()->getContents(), true);
-            
-            return [
-                'connected' => isset($result['status']) && $result['status'] === 'connected',
-                'details' => $result,
-                'timestamp' => now()->toDateTimeString()
-            ];
-        } catch (GuzzleException $e) {
-            Log::warning('WuzAPI Detailed Status Check Failed', [
-                'error' => $e->getMessage()
-            ]);
-            
-            return [
-                'connected' => false,
-                'error' => $e->getMessage(),
-                'timestamp' => now()->toDateTimeString()
-            ];
-        }
-    }
-
-    /**
-     * Send media message (image, document, etc.)
-     */
-    public function sendMediaMessage(string $phone, string $mediaUrl, string $caption = '', string $mediaType = 'image'): ?array
-    {
-        try {
-            $response = $this->client->post('/api/send-media', [
-                'json' => [
-                    'phone' => $this->formatPhone($phone),
-                    'media_url' => $mediaUrl,
-                    'caption' => $caption,
-                    'media_type' => $mediaType,
-                ],
-            ]);
-
-            $result = json_decode($response->getBody()->getContents(), true);
-            
-            Log::info('WuzAPI Media Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'media_type' => $mediaType,
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
-        } catch (GuzzleException $e) {
-            Log::error('WuzAPI Send Media Message Error', [
-                'phone' => $phone,
-                'media_url' => $mediaUrl,
-                'media_type' => $mediaType,
-                'error' => $e->getMessage()
-            ]);
-            return null;
-        }
-    }
-
-    /**
-     * Send location message
-     */
-    public function sendLocationMessage(string $phone, float $latitude, float $longitude, string $name = '', string $address = ''): ?array
-    {
-        try {
-            $response = $this->client->post('/api/send-location', [
-                'json' => [
-                    'phone' => $this->formatPhone($phone),
-                    'latitude' => $latitude,
-                    'longitude' => $longitude,
-                    'name' => $name,
-                    'address' => $address,
-                ],
-            ]);
-
-            $result = json_decode($response->getBody()->getContents(), true);
-            
-            Log::info('WuzAPI Location Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'location' => "{$latitude},{$longitude}",
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
-        } catch (GuzzleException $e) {
-            Log::error('WuzAPI Send Location Message Error', [
-                'phone' => $phone,
-                'latitude' => $latitude,
-                'longitude' => $longitude,
-                'error' => $e->getMessage()
-            ]);
-            return null;
-        }
-    }
-
-    /**
-     * Send list message (for menu options)
-     */
-    public function sendListMessage(string $phone, string $message, string $buttonText, array $sections): ?array
-    {
-        try {
-            $response = $this->client->post('/api/send-list', [
-                'json' => [
-                    'phone' => $this->formatPhone($phone),
-                    'message' => $message,
-                    'button_text' => $buttonText,
-                    'sections' => $sections,
-                ],
-            ]);
-
-            $result = json_decode($response->getBody()->getContents(), true);
-            
-            Log::info('WuzAPI List Message Sent', [
-                'phone' => $this->formatPhone($phone),
-                'sections_count' => count($sections),
-                'status' => $result['status'] ?? 'unknown'
-            ]);
-
-            return $result;
-        } catch (GuzzleException $e) {
-            Log::error('WuzAPI Send List Message Error', [
-                'phone' => $phone,
-                'message' => $message,
-                'sections' => $sections,
-                'error' => $e->getMessage()
-            ]);
-            return null;
-        }
     }
 
     /**
@@ -452,24 +408,5 @@ class WuzapiService
         }
         
         return false;
-    }
-
-    /**
-     * Get message delivery status
-     */
-    public function getMessageStatus(string $messageId): ?array
-    {
-        try {
-            $response = $this->client->get("/api/message/{$messageId}/status");
-            $result = json_decode($response->getBody()->getContents(), true);
-            
-            return $result;
-        } catch (GuzzleException $e) {
-            Log::error('WuzAPI Get Message Status Error', [
-                'message_id' => $messageId,
-                'error' => $e->getMessage()
-            ]);
-            return null;
-        }
     }
 }

@@ -87,6 +87,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the user's wishlist items.
+     */
+    public function wishlist(): HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * Get the user's cart items.
+     */
+    public function cart(): HasMany
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    /**
      * Check if the user's email is verified.
      */
     public function hasVerifiedEmail(): bool

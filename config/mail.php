@@ -62,9 +62,12 @@ return [
     ],
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'rafe.sistema@gmail.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'rafe.atendimento@gmail.com'),
         'name' => env('MAIL_FROM_NAME', 'RAFE - Plataforma de Rifas'),
     ],
+
+    // Force WhatsApp verification only
+    'force_whatsapp_only' => env('FORCE_WHATSAPP_ONLY', false),
 
     'markdown' => [
         'theme' => env('MAIL_MARKDOWN_THEME', 'default'),
